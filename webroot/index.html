@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WiFi Force Country Code</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #0b0b12;
+            --bg-secondary: #12121f;
+            --surface: #1a1a2e;
+            --surface-hover: #222240;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(0, 229, 255, 0.3);
+            --accent: #00e5ff;
+            --accent-dim: rgba(0, 229, 255, 0.15);
+            --accent-glow: rgba(0, 229, 255, 0.4);
+            --success: #00e676;
+            --success-dim: rgba(0, 230, 118, 0.15);
+            --warning: #ffab40;
+            --warning-dim: rgba(255, 171, 64, 0.15);
+            --error: #ff5252;
+            --error-dim: rgba(255, 82, 82, 0.15);
+            --text-primary: #f0f0f0;
+            --text-secondary: #8888a0;
+            --text-dim: #555570;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 40px;
+        }
+
+        /* Background gradient effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(0, 229, 255, 0.04) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(100, 60, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 32px 20px 24px;
+            margin-bottom: 20px;
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--accent), #00bfa5);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 229, 255, 0.25);
+        }
+
+        .header-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: #fff;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        /* Status Card */
+        .status-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+        }
+
+        .status-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-value {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(0, 230, 118, 0.5);
+        }
+
+        .status-dot.inactive {
+            background: var(--error);
+            box-shadow: 0 0 8px rgba(255, 82, 82, 0.4);
+        }
+
+        .status-dot.pending {
+            background: var(--warning);
+            box-shadow: 0 0 8px rgba(255, 171, 64, 0.4);
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+            margin-bottom: 20px;
+        }
+
+        .toggle-info {
+            flex: 1;
+        }
+
+        .toggle-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .toggle-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: #333348;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--accent), #00bfa5);
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.3);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        /* Country Selector */
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 14px 12px 40px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-dim);
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            fill: var(--text-dim);
+            pointer-events: none;
+        }
+
+        .country-list {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+        }
+
+        .country-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .country-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .country-list::-webkit-scrollbar-thumb {
+            background: var(--text-dim);
+            border-radius: 2px;
+        }
+
+        .country-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+
+        .country-item:last-child {
+            border-bottom: none;
+        }
+
+        .country-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .country-item.selected {
+            background: var(--accent-dim);
+            border-left: 3px solid var(--accent);
+        }
+
+        .country-flag {
+            font-size: 22px;
+            line-height: 1;
+            width: 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .country-name {
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .country-code {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            letter-spacing: 1px;
+        }
+
+        .country-check {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent);
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .country-item.selected .country-check {
+            opacity: 1;
+        }
+
+        /* WiFi Restart Checkbox */
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            margin-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-wrapper input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-secondary);
+            border: 2px solid var(--text-dim);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkmark::after {
+            content: '';
+            position: absolute;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-wrapper input:checked ~ .checkmark {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .checkbox-wrapper input:checked ~ .checkmark::after {
+            display: block;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .checkbox-hint {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--accent), #00bfa5);
+            color: #003449;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 24px rgba(0, 229, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary svg {
+            width: 18px;
+            height: 18px;
+            fill: #003449;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0, 52, 73, 0.3);
+            border-top-color: #003449;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 100;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 90%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: var(--success-dim);
+            color: var(--success);
+            border: 1px solid rgba(0, 230, 118, 0.2);
+        }
+
+        .toast.error {
+            background: var(--error-dim);
+            color: var(--error);
+            border: 1px solid rgba(255, 82, 82, 0.2);
+        }
+
+        .toast.info {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px 20px 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--surface) 50%, var(--bg-secondary) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            height: 16px;
+            width: 80px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* No results */
+        .no-results {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Log Card */
+        .log-card {
+            display: none;
+        }
+
+        .log-card.visible {
+            display: block;
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .log-clear {
+            font-size: 12px;
+            color: var(--text-dim);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .log-clear:hover {
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+        }
+
+        .log-body {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 0;
+            max-height: 320px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .log-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-body::-webkit-scrollbar-thumb {
+            background: var(--text-dim);
+            border-radius: 2px;
+        }
+
+        .log-entry {
+            padding: 5px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            animation: logSlide 0.25s ease-out;
+        }
+
+        .log-entry + .log-entry {
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        @keyframes logSlide {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-time {
+            color: var(--text-dim);
+            flex-shrink: 0;
+            min-width: 58px;
+        }
+
+        .log-icon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            margin-top: 1px;
+        }
+
+        .log-icon.success {
+            fill: var(--success);
+        }
+
+        .log-icon.error {
+            fill: var(--error);
+        }
+
+        .log-icon.info {
+            fill: var(--accent);
+        }
+
+        .log-icon.warn {
+            fill: var(--warning);
+        }
+
+        .log-icon.running {
+            fill: var(--warning);
+            animation: spin 1s linear infinite;
+        }
+
+        .log-msg {
+            flex: 1;
+            word-break: break-word;
+            color: var(--text-secondary);
+        }
+
+        .log-msg .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .log-msg .val {
+            color: var(--success);
+        }
+
+        .log-msg .err-text {
+            color: var(--error);
+        }
+
+        .log-separator {
+            padding: 2px 14px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-dim);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header fade-in">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+            </div>
+            <h1>WiFi Force Country</h1>
+            <p>by burakgon</p>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card fade-in" style="animation-delay: 0.1s">
+            <div class="card-title">Status</div>
+            <div class="status-grid">
+                <div class="status-row">
+                    <span class="status-label">Module</span>
+                    <span class="status-value" id="statusModule">
+                        <span class="skeleton"></span>
+                    </span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Country Code</span>
+                    <span class="status-value" id="statusCountry">
+                        <span class="skeleton"></span>
+                    </span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Force Override</span>
+                    <span class="status-value" id="statusForce">
+                        <span class="skeleton"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="card fade-in" style="animation-delay: 0.2s">
+            <div class="card-title">Settings</div>
+
+            <!-- Enable Toggle -->
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-title">Force Country Code</div>
+                    <div class="toggle-desc">Override WiFi region on boot</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggleEnabled" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- Country Selector -->
+            <div class="section-label">Country Code</div>
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" class="search-box" id="searchInput" placeholder="Search countries...">
+            </div>
+            <div class="country-list" id="countryList"></div>
+
+            <!-- WiFi Restart -->
+            <div class="checkbox-row">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="restartWifi" checked>
+                    <span class="checkmark"></span>
+                </label>
+                <div>
+                    <div class="checkbox-label">Restart WiFi after applying</div>
+                    <div class="checkbox-hint">Toggles WiFi off/on to apply changes immediately</div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <button class="btn-primary" id="btnSave" onclick="saveConfig()">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                Save & Apply
+            </button>
+        </div>
+
+        <!-- Log Card -->
+        <div class="card fade-in log-card" id="logCard">
+            <div class="log-header">
+                <div class="card-title" style="margin-bottom:0">Log</div>
+                <button class="log-clear" onclick="window.clearLog()">Clear</button>
+            </div>
+            <div class="log-body" id="logBody"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            WiFi Force Country Code v2.0 &middot; burakgon
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+        import { exec, toast as ksuToast } from 'kernelsu';
+
+        const MODULE_ID = "wifi-force-country";
+        const MODULE_DIR = `/data/adb/modules/${MODULE_ID}`;
+        const CONFIG_FILE = `${MODULE_DIR}/country.conf`;
+
+        const SVG_SUCCESS = '<svg class="log-icon success" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>';
+        const SVG_ERROR   = '<svg class="log-icon error" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+        const SVG_INFO    = '<svg class="log-icon info" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
+        const SVG_RUNNING = '<svg class="log-icon running" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>';
+
+        const COUNTRIES = [
+            { code: "US", name: "United States", flag: "\u{1F1FA}\u{1F1F8}" },
+            { code: "GB", name: "United Kingdom", flag: "\u{1F1EC}\u{1F1E7}" },
+            { code: "AU", name: "Australia", flag: "\u{1F1E6}\u{1F1FA}" },
+            { code: "DE", name: "Germany", flag: "\u{1F1E9}\u{1F1EA}" },
+            { code: "FR", name: "France", flag: "\u{1F1EB}\u{1F1F7}" },
+            { code: "CA", name: "Canada", flag: "\u{1F1E8}\u{1F1E6}" },
+            { code: "JP", name: "Japan", flag: "\u{1F1EF}\u{1F1F5}" },
+            { code: "KR", name: "South Korea", flag: "\u{1F1F0}\u{1F1F7}" },
+            { code: "CN", name: "China", flag: "\u{1F1E8}\u{1F1F3}" },
+            { code: "IN", name: "India", flag: "\u{1F1EE}\u{1F1F3}" },
+            { code: "BR", name: "Brazil", flag: "\u{1F1E7}\u{1F1F7}" },
+            { code: "IT", name: "Italy", flag: "\u{1F1EE}\u{1F1F9}" },
+            { code: "ES", name: "Spain", flag: "\u{1F1EA}\u{1F1F8}" },
+            { code: "NL", name: "Netherlands", flag: "\u{1F1F3}\u{1F1F1}" },
+            { code: "SE", name: "Sweden", flag: "\u{1F1F8}\u{1F1EA}" },
+            { code: "NO", name: "Norway", flag: "\u{1F1F3}\u{1F1F4}" },
+            { code: "FI", name: "Finland", flag: "\u{1F1EB}\u{1F1EE}" },
+            { code: "DK", name: "Denmark", flag: "\u{1F1E9}\u{1F1F0}" },
+            { code: "CH", name: "Switzerland", flag: "\u{1F1E8}\u{1F1ED}" },
+            { code: "AT", name: "Austria", flag: "\u{1F1E6}\u{1F1F9}" },
+            { code: "BE", name: "Belgium", flag: "\u{1F1E7}\u{1F1EA}" },
+            { code: "PL", name: "Poland", flag: "\u{1F1F5}\u{1F1F1}" },
+            { code: "PT", name: "Portugal", flag: "\u{1F1F5}\u{1F1F9}" },
+            { code: "TR", name: "Turkey", flag: "\u{1F1F9}\u{1F1F7}" },
+            { code: "RU", name: "Russia", flag: "\u{1F1F7}\u{1F1FA}" },
+            { code: "MX", name: "Mexico", flag: "\u{1F1F2}\u{1F1FD}" },
+            { code: "AR", name: "Argentina", flag: "\u{1F1E6}\u{1F1F7}" },
+            { code: "CL", name: "Chile", flag: "\u{1F1E8}\u{1F1F1}" },
+            { code: "CO", name: "Colombia", flag: "\u{1F1E8}\u{1F1F4}" },
+            { code: "ZA", name: "South Africa", flag: "\u{1F1FF}\u{1F1E6}" },
+            { code: "EG", name: "Egypt", flag: "\u{1F1EA}\u{1F1EC}" },
+            { code: "SA", name: "Saudi Arabia", flag: "\u{1F1F8}\u{1F1E6}" },
+            { code: "AE", name: "UAE", flag: "\u{1F1E6}\u{1F1EA}" },
+            { code: "TH", name: "Thailand", flag: "\u{1F1F9}\u{1F1ED}" },
+            { code: "VN", name: "Vietnam", flag: "\u{1F1FB}\u{1F1F3}" },
+            { code: "PH", name: "Philippines", flag: "\u{1F1F5}\u{1F1ED}" },
+            { code: "MY", name: "Malaysia", flag: "\u{1F1F2}\u{1F1FE}" },
+            { code: "SG", name: "Singapore", flag: "\u{1F1F8}\u{1F1EC}" },
+            { code: "ID", name: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}" },
+            { code: "TW", name: "Taiwan", flag: "\u{1F1F9}\u{1F1FC}" },
+            { code: "HK", name: "Hong Kong", flag: "\u{1F1ED}\u{1F1F0}" },
+            { code: "NZ", name: "New Zealand", flag: "\u{1F1F3}\u{1F1FF}" },
+            { code: "IE", name: "Ireland", flag: "\u{1F1EE}\u{1F1EA}" },
+            { code: "IL", name: "Israel", flag: "\u{1F1EE}\u{1F1F1}" },
+            { code: "CZ", name: "Czech Republic", flag: "\u{1F1E8}\u{1F1FF}" },
+            { code: "RO", name: "Romania", flag: "\u{1F1F7}\u{1F1F4}" },
+            { code: "HU", name: "Hungary", flag: "\u{1F1ED}\u{1F1FA}" },
+            { code: "GR", name: "Greece", flag: "\u{1F1EC}\u{1F1F7}" },
+            { code: "UA", name: "Ukraine", flag: "\u{1F1FA}\u{1F1E6}" },
+        ];
+
+        let selectedCode = "US";
+        let isEnabled = true;
+
+        // ── Logging ──────────────────────────────────────
+        function getTimestamp() {
+            const d = new Date();
+            return [d.getHours(), d.getMinutes(), d.getSeconds()]
+                .map(n => String(n).padStart(2, '0')).join(':');
+        }
+
+        function addLog(message, icon = SVG_INFO) {
+            const card = document.getElementById('logCard');
+            const body = document.getElementById('logBody');
+            card.classList.add('visible');
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${getTimestamp()}</span>${icon}<span class="log-msg">${message}</span>`;
+            body.appendChild(entry);
+            body.scrollTop = body.scrollHeight;
+            return entry;
+        }
+
+        function addLogSeparator(text) {
+            const body = document.getElementById('logBody');
+            const sep = document.createElement('div');
+            sep.className = 'log-separator';
+            sep.textContent = text;
+            body.appendChild(sep);
+        }
+
+        function updateLogEntry(entry, message, icon) {
+            entry.innerHTML = `<span class="log-time">${getTimestamp()}</span>${icon}<span class="log-msg">${message}</span>`;
+        }
+
+        window.clearLog = function() {
+            document.getElementById('logBody').innerHTML = '';
+            document.getElementById('logCard').classList.remove('visible');
+        };
+
+        // ── Config & Status ──────────────────────────────
+        async function loadConfig() {
+            try {
+                const { errno, stdout } = await exec(`cat ${CONFIG_FILE} 2>/dev/null`);
+                if (errno === 0 && stdout.trim()) {
+                    const lines = stdout.trim().split('\n');
+                    for (const line of lines) {
+                        const [key, val] = line.split('=');
+                        if (key === 'COUNTRY_CODE') selectedCode = val.replace(/"/g, '');
+                        if (key === 'ENABLED') isEnabled = val.replace(/"/g, '') === '1';
+                    }
+                }
+            } catch (e) {
+                console.log('Config read error:', e);
+            }
+
+            document.getElementById('toggleEnabled').checked = isEnabled;
+            renderCountryList();
+            updateStatus();
+        }
+
+        async function updateStatus() {
+            const moduleEl = document.getElementById('statusModule');
+            const countryEl = document.getElementById('statusCountry');
+            const forceEl = document.getElementById('statusForce');
+
+            let moduleEnabled = true;
+            try {
+                const { stdout } = await exec(`[ -f ${MODULE_DIR}/disable ] && echo disabled || echo enabled`);
+                moduleEnabled = stdout.trim() === 'enabled';
+            } catch (e) {
+                moduleEnabled = true;
+            }
+
+            moduleEl.innerHTML = moduleEnabled
+                ? '<span class="status-dot active"></span> Active'
+                : '<span class="status-dot inactive"></span> Disabled';
+
+            const country = COUNTRIES.find(c => c.code === selectedCode);
+            const displayName = country ? `${country.flag} ${country.code}` : selectedCode;
+            countryEl.textContent = displayName;
+
+            forceEl.innerHTML = isEnabled
+                ? '<span class="status-dot active"></span> Enabled'
+                : '<span class="status-dot inactive"></span> Disabled';
+        }
+
+        // ── Country List ─────────────────────────────────
+        function renderCountryList(filter = '') {
+            const list = document.getElementById('countryList');
+            const filtered = filter
+                ? COUNTRIES.filter(c =>
+                    c.name.toLowerCase().includes(filter.toLowerCase()) ||
+                    c.code.toLowerCase().includes(filter.toLowerCase())
+                  )
+                : COUNTRIES;
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="no-results">No countries found</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(c => `
+                <div class="country-item ${c.code === selectedCode ? 'selected' : ''}"
+                     onclick="window.selectCountry('${c.code}')">
+                    <span class="country-flag">${c.flag}</span>
+                    <span class="country-name">${c.name}</span>
+                    <span class="country-code">${c.code}</span>
+                    <svg class="country-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                </div>
+            `).join('');
+        }
+
+        window.selectCountry = function(code) {
+            selectedCode = code;
+            renderCountryList(document.getElementById('searchInput').value);
+            updateStatus();
+        };
+
+        // ── Save & Apply (with logging) ──────────────────
+        window.saveConfig = async function() {
+            const btn = document.getElementById('btnSave');
+            const restartWifi = document.getElementById('restartWifi').checked;
+            isEnabled = document.getElementById('toggleEnabled').checked;
+
+            const country = COUNTRIES.find(c => c.code === selectedCode);
+            const countryLabel = country ? `${country.flag} ${country.name} (${country.code})` : selectedCode;
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Applying...';
+
+            addLogSeparator(`Apply started`);
+            addLog(`Country: <span class="highlight">${countryLabel}</span> &nbsp; Enabled: <span class="highlight">${isEnabled ? 'Yes' : 'No'}</span>`, SVG_INFO);
+
+            let failed = false;
+
+            // Step 1: Write config
+            let entry = addLog('Writing config file...', SVG_RUNNING);
+            try {
+                const configContent = `COUNTRY_CODE=${selectedCode}\\nENABLED=${isEnabled ? '1' : '0'}`;
+                const { errno, stderr } = await exec(`echo -e "${configContent}" > ${CONFIG_FILE}`);
+                if (errno !== 0) {
+                    updateLogEntry(entry, `Config write failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                    failed = true;
+                } else {
+                    updateLogEntry(entry, `Config saved to <span class="val">${CONFIG_FILE}</span>`, SVG_SUCCESS);
+                }
+            } catch (e) {
+                updateLogEntry(entry, `Config write error: <span class="err-text">${e.message}</span>`, SVG_ERROR);
+                failed = true;
+            }
+
+            if (failed) {
+                addLog('Aborted due to config write failure', SVG_ERROR);
+                resetButton(btn);
+                showToast('Failed to save config', 'error');
+                return;
+            }
+
+            // Step 2: Apply country code
+            if (isEnabled) {
+                entry = addLog(`Running <span class="highlight">cmd wifi force-country-code enabled ${selectedCode}</span>...`, SVG_RUNNING);
+                try {
+                    const { errno, stdout, stderr } = await exec(`cmd wifi force-country-code enabled ${selectedCode}`);
+                    if (errno !== 0) {
+                        updateLogEntry(entry, `Force country code failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                        failed = true;
+                    } else {
+                        const out = stdout.trim();
+                        updateLogEntry(entry, `Country code forced to <span class="val">${selectedCode}</span>${out ? ' — ' + out : ''}`, SVG_SUCCESS);
+                    }
+                } catch (e) {
+                    updateLogEntry(entry, `Force country code error: <span class="err-text">${e.message}</span>`, SVG_ERROR);
+                    failed = true;
+                }
+            } else {
+                addLog('Force override disabled — skipping country code command', SVG_INFO);
+            }
+
+            // Step 3: Restart WiFi
+            if (restartWifi && !failed) {
+                btn.innerHTML = '<div class="spinner"></div> Restarting WiFi...';
+
+                entry = addLog('Disabling WiFi (<span class="highlight">svc wifi disable</span>)...', SVG_RUNNING);
+                try {
+                    const { errno, stderr } = await exec('svc wifi disable');
+                    if (errno !== 0) {
+                        updateLogEntry(entry, `WiFi disable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                        failed = true;
+                    } else {
+                        updateLogEntry(entry, 'WiFi disabled', SVG_SUCCESS);
+                    }
+                } catch (e) {
+                    updateLogEntry(entry, `WiFi disable error: <span class="err-text">${e.message}</span>`, SVG_ERROR);
+                    failed = true;
+                }
+
+                if (!failed) {
+                    entry = addLog('Waiting 2s for WiFi to fully stop...', SVG_RUNNING);
+                    await new Promise(r => setTimeout(r, 2000));
+                    updateLogEntry(entry, 'Wait complete', SVG_SUCCESS);
+
+                    entry = addLog('Enabling WiFi (<span class="highlight">svc wifi enable</span>)...', SVG_RUNNING);
+                    try {
+                        const { errno, stderr } = await exec('svc wifi enable');
+                        if (errno !== 0) {
+                            updateLogEntry(entry, `WiFi enable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                            failed = true;
+                        } else {
+                            updateLogEntry(entry, 'WiFi enabled', SVG_SUCCESS);
+                        }
+                    } catch (e) {
+                        updateLogEntry(entry, `WiFi enable error: <span class="err-text">${e.message}</span>`, SVG_ERROR);
+                        failed = true;
+                    }
+
+                    if (!failed) {
+                        entry = addLog('Waiting 1s for WiFi to reconnect...', SVG_RUNNING);
+                        await new Promise(r => setTimeout(r, 1000));
+                        updateLogEntry(entry, 'WiFi restarted', SVG_SUCCESS);
+                    }
+                }
+            } else if (!restartWifi) {
+                addLog('WiFi restart skipped (unchecked)', SVG_INFO);
+            }
+
+            // Final result
+            if (failed) {
+                addLog('Completed with errors', SVG_ERROR);
+                showToast('Applied with errors — check logs', 'error');
+            } else {
+                addLog('All steps completed successfully', SVG_SUCCESS);
+                showToast('Settings applied successfully', 'success');
+            }
+
+            updateStatus();
+            resetButton(btn);
+        };
+
+        function resetButton(btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Save & Apply`;
+        }
+
+        // ── Toast ────────────────────────────────────────
+        function showToast(message, type = 'info') {
+            try { ksuToast(message); } catch (e) {}
+            const el = document.getElementById('toast');
+            el.textContent = message;
+            el.className = `toast ${type}`;
+            requestAnimationFrame(() => el.classList.add('show'));
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // ── Event Listeners ──────────────────────────────
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            renderCountryList(e.target.value);
+        });
+
+        document.getElementById('toggleEnabled').addEventListener('change', () => {
+            isEnabled = document.getElementById('toggleEnabled').checked;
+            updateStatus();
+        });
+
+        // Initialize
+        loadConfig();
+    </script>
+</body>
+</html>
