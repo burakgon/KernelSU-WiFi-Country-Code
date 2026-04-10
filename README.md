@@ -1,6 +1,6 @@
 # WiFi Force Country Code — KernelSU Module
 
-A KernelSU / Magisk module that forces your Android device's WiFi country code to any region, unlocking restricted channels and improving WiFi performance. Fully configurable through a built-in **WebUI** — no terminal needed.
+A KernelSU / Magisk module that forces your Android device's WiFi country code to any region, unlocking restricted 5 GHz, 6 GHz (WiFi 6E/7), and DFS channels. Fully configurable through a built-in **WebUI** — no terminal needed.
 
 <p align="center">
   <img src="screenshot.png" alt="WebUI Screenshot" width="300">
@@ -8,10 +8,11 @@ A KernelSU / Magisk module that forces your Android device's WiFi country code t
 
 ## Why?
 
-Android locks WiFi channels based on your region. Some countries block 5 GHz channels, limit DFS bands, or reduce transmit power. This module overrides that restriction at boot, giving you access to all channels available in your chosen region.
+Android locks WiFi channels based on your region. Some countries block 5 GHz and 6 GHz channels, limit DFS bands, or reduce transmit power. This module overrides that restriction at boot, giving you access to all channels available in your chosen region.
 
 **Common use cases:**
 - Unlock 5 GHz channels (e.g. channels 100-144) blocked in your region
+- Unlock 6 GHz channels (WiFi 6E/7) in regions where they're available (e.g. US, GB, DE)
 - Access DFS channels for less congested WiFi
 - Match your router's country code for better compatibility
 - Travel between regions without WiFi limitations
@@ -67,7 +68,7 @@ The country code and enabled state are read from a config file (`country.conf`) 
 | ES | Spain | NL | Netherlands | TW | Taiwan |
 | TR | Turkey | PL | Poland | HK | Hong Kong |
 
-...and 25+ more available in the WebUI.
+...and 116 more available in the WebUI. Full list sourced from the official [Linux wireless-regdb](https://git.kernel.org/pub/scm/linux/kernel/git/sforshee/wireless-regdb.git/).
 
 ## Requirements
 
