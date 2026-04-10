@@ -808,8 +808,24 @@
     <!-- Toast Container -->
     <div class="toast" id="toast"></div>
 
-    <script type="module">
-        import { exec, toast as ksuToast } from 'kernelsu';
+    <script>
+        (async function() {
+
+        // ── KernelSU API (try import, fallback to global) ──
+        let execCmd, ksuToast;
+        try {
+            const mod = await import('kernelsu');
+            execCmd = mod.exec;
+            ksuToast = mod.toast || function(){};
+        } catch(e) {
+            if (typeof ksu !== 'undefined') {
+                execCmd = ksu.exec.bind(ksu);
+                ksuToast = ksu.toast ? ksu.toast.bind(ksu) : function(){};
+            } else {
+                document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#ff5252;font-family:sans-serif"><h2>KernelSU API not available</h2><p>Open this page from KernelSU Manager</p></div>';
+                return;
+            }
+        }
 
         const MODULE_ID = "wifi-force-country";
         const MODULE_DIR = `/data/adb/modules/${MODULE_ID}`;
@@ -915,7 +931,7 @@
         // ── Config & Status ──────────────────────────────
         async function loadConfig() {
             try {
-                const { errno, stdout } = await exec(`cat ${CONFIG_FILE} 2>/dev/null`);
+                const { errno, stdout } = await execCmd(`cat ${CONFIG_FILE} 2>/dev/null`);
                 if (errno === 0 && stdout.trim()) {
                     const lines = stdout.trim().split('\n');
                     for (const line of lines) {
@@ -940,7 +956,7 @@
 
             let moduleEnabled = true;
             try {
-                const { stdout } = await exec(`[ -f ${MODULE_DIR}/disable ] && echo disabled || echo enabled`);
+                const { stdout } = await execCmd(`[ -f ${MODULE_DIR}/disable ] && echo disabled || echo enabled`);
                 moduleEnabled = stdout.trim() === 'enabled';
             } catch (e) {
                 moduleEnabled = true;
@@ -1011,8 +1027,8 @@
             // Step 1: Write config
             let entry = addLog('Writing config file...', SVG_RUNNING);
             try {
-                const configContent = `COUNTRY_CODE=${selectedCode}\\nENABLED=${isEnabled ? '1' : '0'}`;
-                const { errno, stderr } = await exec(`echo -e "${configContent}" > ${CONFIG_FILE}`);
+                const configContent = `COUNTRY_CODE=${selectedCode}\nENABLED=${isEnabled ? '1' : '0'}`;
+                const { errno, stderr } = await execCmd(`printf '%s\n' 'COUNTRY_CODE=${selectedCode}' 'ENABLED=${isEnabled ? '1' : '0'}' > ${CONFIG_FILE}`);
                 if (errno !== 0) {
                     updateLogEntry(entry, `Config write failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
                     failed = true;
@@ -1035,7 +1051,7 @@
             if (isEnabled) {
                 entry = addLog(`Running <span class="highlight">cmd wifi force-country-code enabled ${selectedCode}</span>...`, SVG_RUNNING);
                 try {
-                    const { errno, stdout, stderr } = await exec(`cmd wifi force-country-code enabled ${selectedCode}`);
+                    const { errno, stdout, stderr } = await execCmd(`cmd wifi force-country-code enabled ${selectedCode}`);
                     if (errno !== 0) {
                         updateLogEntry(entry, `Force country code failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
                         failed = true;
@@ -1057,7 +1073,7 @@
 
                 entry = addLog('Disabling WiFi (<span class="highlight">svc wifi disable</span>)...', SVG_RUNNING);
                 try {
-                    const { errno, stderr } = await exec('svc wifi disable');
+                    const { errno, stderr } = await execCmd('svc wifi disable');
                     if (errno !== 0) {
                         updateLogEntry(entry, `WiFi disable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
                         failed = true;
@@ -1076,7 +1092,7 @@
 
                     entry = addLog('Enabling WiFi (<span class="highlight">svc wifi enable</span>)...', SVG_RUNNING);
                     try {
-                        const { errno, stderr } = await exec('svc wifi enable');
+                        const { errno, stderr } = await execCmd('svc wifi enable');
                         if (errno !== 0) {
                             updateLogEntry(entry, `WiFi enable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
                             failed = true;
@@ -1138,6 +1154,8 @@
 
         // Initialize
         loadConfig();
+
+        })();
     </script>
 </body>
 </html>
