@@ -2,6 +2,10 @@
 
 A KernelSU / Magisk module that forces your Android device's WiFi country code to any region, unlocking restricted channels and improving WiFi performance. Fully configurable through a built-in **WebUI** — no terminal needed.
 
+<p align="center">
+  <img src="screenshot.png" alt="WebUI Screenshot" width="300">
+</p>
+
 ## Why?
 
 Android locks WiFi channels based on your region. Some countries block 5 GHz channels, limit DFS bands, or reduce transmit power. This module overrides that restriction at boot, giving you access to all channels available in your chosen region.
