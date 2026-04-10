@@ -827,6 +827,16 @@
             }
         }
 
+        // Normalize exec result — KernelSU versions differ (errno vs code)
+        async function run(cmd) {
+            const r = await execCmd(cmd);
+            return {
+                exit: r.errno ?? r.code ?? 0,
+                out: (r.stdout || '').trim(),
+                err: (r.stderr || '').trim()
+            };
+        }
+
         const MODULE_ID = "wifi-force-country";
         const MODULE_DIR = `/data/adb/modules/${MODULE_ID}`;
         const CONFIG_FILE = `${MODULE_DIR}/country.conf`;
@@ -931,9 +941,9 @@
         // ── Config & Status ──────────────────────────────
         async function loadConfig() {
             try {
-                const { errno, stdout } = await execCmd(`cat ${CONFIG_FILE} 2>/dev/null`);
-                if (errno === 0 && stdout.trim()) {
-                    const lines = stdout.trim().split('\n');
+                const r = await run(`cat ${CONFIG_FILE} 2>/dev/null`);
+                if (r.out) {
+                    const lines = r.out.split('\n');
                     for (const line of lines) {
                         const [key, val] = line.split('=');
                         if (key === 'COUNTRY_CODE') selectedCode = val.replace(/"/g, '');
@@ -956,8 +966,8 @@
 
             let moduleEnabled = true;
             try {
-                const { stdout } = await execCmd(`[ -f ${MODULE_DIR}/disable ] && echo disabled || echo enabled`);
-                moduleEnabled = stdout.trim() === 'enabled';
+                const r = await run(`[ -f ${MODULE_DIR}/disable ] && echo disabled || echo enabled`);
+                moduleEnabled = r.out !== 'disabled';
             } catch (e) {
                 moduleEnabled = true;
             }
@@ -1027,10 +1037,10 @@
             // Step 1: Write config
             let entry = addLog('Writing config file...', SVG_RUNNING);
             try {
-                const configContent = `COUNTRY_CODE=${selectedCode}\nENABLED=${isEnabled ? '1' : '0'}`;
-                const { errno, stderr } = await execCmd(`printf '%s\n' 'COUNTRY_CODE=${selectedCode}' 'ENABLED=${isEnabled ? '1' : '0'}' > ${CONFIG_FILE}`);
-                if (errno !== 0) {
-                    updateLogEntry(entry, `Config write failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                const enabled = isEnabled ? '1' : '0';
+                const r = await run(`printf '%s\\n' 'COUNTRY_CODE=${selectedCode}' 'ENABLED=${enabled}' > ${CONFIG_FILE}`);
+                if (r.exit !== 0) {
+                    updateLogEntry(entry, `Config write failed: <span class="err-text">${r.err || 'exit ' + r.exit}</span>`, SVG_ERROR);
                     failed = true;
                 } else {
                     updateLogEntry(entry, `Config saved to <span class="val">${CONFIG_FILE}</span>`, SVG_SUCCESS);
@@ -1051,13 +1061,12 @@
             if (isEnabled) {
                 entry = addLog(`Running <span class="highlight">cmd wifi force-country-code enabled ${selectedCode}</span>...`, SVG_RUNNING);
                 try {
-                    const { errno, stdout, stderr } = await execCmd(`cmd wifi force-country-code enabled ${selectedCode}`);
-                    if (errno !== 0) {
-                        updateLogEntry(entry, `Force country code failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                    const r = await run(`cmd wifi force-country-code enabled ${selectedCode}`);
+                    if (r.exit !== 0) {
+                        updateLogEntry(entry, `Force country code failed: <span class="err-text">${r.err || 'exit ' + r.exit}</span>`, SVG_ERROR);
                         failed = true;
                     } else {
-                        const out = stdout.trim();
-                        updateLogEntry(entry, `Country code forced to <span class="val">${selectedCode}</span>${out ? ' — ' + out : ''}`, SVG_SUCCESS);
+                        updateLogEntry(entry, `Country code forced to <span class="val">${selectedCode}</span>${r.out ? ' — ' + r.out : ''}`, SVG_SUCCESS);
                     }
                 } catch (e) {
                     updateLogEntry(entry, `Force country code error: <span class="err-text">${e.message}</span>`, SVG_ERROR);
@@ -1073,9 +1082,9 @@
 
                 entry = addLog('Disabling WiFi (<span class="highlight">svc wifi disable</span>)...', SVG_RUNNING);
                 try {
-                    const { errno, stderr } = await execCmd('svc wifi disable');
-                    if (errno !== 0) {
-                        updateLogEntry(entry, `WiFi disable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                    const r = await run('svc wifi disable');
+                    if (r.exit !== 0) {
+                        updateLogEntry(entry, `WiFi disable failed: <span class="err-text">${r.err || 'exit ' + r.exit}</span>`, SVG_ERROR);
                         failed = true;
                     } else {
                         updateLogEntry(entry, 'WiFi disabled', SVG_SUCCESS);
@@ -1092,9 +1101,9 @@
 
                     entry = addLog('Enabling WiFi (<span class="highlight">svc wifi enable</span>)...', SVG_RUNNING);
                     try {
-                        const { errno, stderr } = await execCmd('svc wifi enable');
-                        if (errno !== 0) {
-                            updateLogEntry(entry, `WiFi enable failed: <span class="err-text">${stderr || 'errno ' + errno}</span>`, SVG_ERROR);
+                        const r = await run('svc wifi enable');
+                        if (r.exit !== 0) {
+                            updateLogEntry(entry, `WiFi enable failed: <span class="err-text">${r.err || 'exit ' + r.exit}</span>`, SVG_ERROR);
                             failed = true;
                         } else {
                             updateLogEntry(entry, 'WiFi enabled', SVG_SUCCESS);
