@@ -18,7 +18,7 @@ Android locks WiFi channels based on your region. Some countries block 5 GHz cha
 
 ## Features
 
-- **50+ country codes** — US, GB, AU, DE, JP, KR, and many more
+- **140 country codes** — Every code from the official Linux wireless-regdb
 - **WebUI configuration** — Search, select, and apply from KernelSU Manager
 - **Live status panel** — See current module state, active country code, and override status
 - **WiFi auto-restart** — Optionally toggles WiFi off/on after applying so changes take effect immediately
